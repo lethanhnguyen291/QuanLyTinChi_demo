@@ -22,3 +22,8 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+# Cho phep luu thu vien JAR trong thu muc lib
+!/lib/**/*.jar
+
+# Bo qua thu muc chua ket qua bien dich
+/bin/
