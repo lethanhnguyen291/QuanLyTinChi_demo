@@ -170,9 +170,38 @@ public class AdminDashboardPanel extends JPanel {
     // ========================================================
     // TIỆN ÍCH VẼ GIAO DIỆN (UI BUILDERS)
     // ========================================================
-    private JPanel createColoredStatCard(String title, String val, int iconType, Color bgColor, Color textColor) {
-        return UIUtils.statCard(title,val,iconType>=3?UIUtils.MIT_RED:UIUtils.BLUE);
-    }
+    private JPanel createColoredStatCard(
+        String title, String val, int iconType,
+        Color bgColor, Color textColor) {
+
+    JPanel card = new JPanel(new BorderLayout(12, 0));
+    card.setBackground(bgColor);
+    card.setBorder(UIUtils.cardBorder(UIUtils.BORDER, 16));
+
+    JPanel textPanel = new JPanel();
+    textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+    textPanel.setOpaque(false);
+
+    JLabel label = new JLabel(title);
+    label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+    label.setForeground(UIUtils.TEXT_MUTED);
+    label.setToolTipText(title);
+
+    JLabel value = new JLabel(val);
+    value.setFont(new Font("Segoe UI", Font.BOLD, 22));
+    value.setForeground(textColor);
+    value.setToolTipText(val);
+
+    textPanel.add(label);
+    textPanel.add(Box.createVerticalStrut(7));
+    textPanel.add(value);
+
+    JLabel icon = new JLabel(new StatVectorIcon(iconType, textColor));
+
+    card.add(textPanel, BorderLayout.CENTER);
+    card.add(icon, BorderLayout.EAST);
+    return card;
+}
 
     // ========================================================
     // VECTOR ICONS & RENDERERS
