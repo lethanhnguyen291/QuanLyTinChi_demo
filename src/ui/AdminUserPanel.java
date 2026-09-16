@@ -48,8 +48,8 @@ public class AdminUserPanel extends JPanel {
         togglePanel.setBackground(UIUtils.BG_APP);
         togglePanel.setBorder(new EmptyBorder(0, 0, 5, 0));
         
-        btnTabSV = createToggleBtn("DANH SÁCH SINH VIÊN", true);
-        btnTabGV = createToggleBtn("DANH SÁCH GIẢNG VIÊN", false);
+        btnTabSV = createToggleBtn("Sinh viên", true);
+        btnTabGV = createToggleBtn("Giảng viên", false);
         
         togglePanel.add(btnTabSV);
         togglePanel.add(btnTabGV);
@@ -100,9 +100,9 @@ public class AdminUserPanel extends JPanel {
         JPanel tableHeader = new JPanel(new BorderLayout());
         tableHeader.setBackground(Color.WHITE);
         tableHeader.setBorder(new EmptyBorder(12, 20, 12, 20));
-        JLabel lblTblTitle = new JLabel("Bảng Danh Sách Sinh Viên Toàn Trường");
+        JLabel lblTblTitle = new JLabel("Danh sách sinh viên");
         lblTblTitle.setFont(UIUtils.FONT_TITLE);
-        lblTblTitle.setForeground(UIUtils.TEXT_MAIN);
+        lblTblTitle.setForeground(UIUtils.BLUE_DARK);
         tableHeader.add(lblTblTitle, BorderLayout.WEST);
 
         String[] cols = {"Mã SV", "Họ Tên", "Giới Tính", "Ngày Sinh", "SĐT", "Email", "Lớp", "Ngành", "Trạng Thái"};
@@ -111,7 +111,7 @@ public class AdminUserPanel extends JPanel {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         tblSV = new JTable(modelSV);
-        UIUtils.styleTable(tblSV);
+        UIUtils.styleTable(tblSV);UIUtils.columnWidths(tblSV,100,200,80,110,125,240,100,110,130);
         tblSV.setShowGrid(true);
         tblSV.setGridColor(UIUtils.BORDER);
         tblSV.setIntercellSpacing(new Dimension(1, 1));
@@ -122,6 +122,7 @@ public class AdminUserPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(tblSV);
         scroll.setBorder(new MatteBorder(1, 0, 0, 0, UIUtils.BORDER));
 
+        tableHeader.add(utils.Ui.tableTools(tblSV,"Sinh_vien"),BorderLayout.SOUTH);
         tableWrapper.add(tableHeader, BorderLayout.NORTH);
         tableWrapper.add(scroll, BorderLayout.CENTER);
 
@@ -135,10 +136,10 @@ public class AdminUserPanel extends JPanel {
         // Tiêu đề form với gạch chân màu Xanh
         JPanel formHeader = new JPanel(new BorderLayout());
         formHeader.setBackground(Color.WHITE);
-        formHeader.setBorder(new MatteBorder(0, 0, 2, 0, new Color(37, 99, 235))); 
-        JLabel lblFormTitle = new JLabel("THÔNG TIN CHI TIẾT SINH VIÊN");
+        formHeader.setBorder(new MatteBorder(0, 0, 2, 0, UIUtils.MIT_RED)); 
+        JLabel lblFormTitle = new JLabel("Thông tin sinh viên");
         lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblFormTitle.setForeground(new Color(37, 99, 235));
+        lblFormTitle.setForeground(UIUtils.MIT_RED);
         lblFormTitle.setBorder(new EmptyBorder(0, 0, 8, 0));
         formHeader.add(lblFormTitle, BorderLayout.WEST);
 
@@ -191,6 +192,7 @@ public class AdminUserPanel extends JPanel {
         // --- GẮN SỰ KIỆN CỦA BẢNG VÀ NÚT BẤM ---
         tblSV.getSelectionModel().addListSelectionListener(e -> {
             int r = tblSV.getSelectedRow();
+            if(r>=0)r=tblSV.convertRowIndexToModel(r);
             if(r >= 0 && !e.getValueIsAdjusting()) {
                 txtMaSV.setText(modelSV.getValueAt(r, 0) != null ? modelSV.getValueAt(r, 0).toString() : "");
                 txtHoTenSV.setText(modelSV.getValueAt(r, 1) != null ? modelSV.getValueAt(r, 1).toString() : "");
@@ -247,9 +249,9 @@ public class AdminUserPanel extends JPanel {
         JPanel tableHeader = new JPanel(new BorderLayout());
         tableHeader.setBackground(Color.WHITE);
         tableHeader.setBorder(new EmptyBorder(12, 20, 12, 20));
-        JLabel lblTblTitle = new JLabel("Bảng Danh Sách Giảng Viên Khoa");
+        JLabel lblTblTitle = new JLabel("Danh sách giảng viên");
         lblTblTitle.setFont(UIUtils.FONT_TITLE);
-        lblTblTitle.setForeground(UIUtils.TEXT_MAIN);
+        lblTblTitle.setForeground(UIUtils.BLUE_DARK);
         tableHeader.add(lblTblTitle, BorderLayout.WEST);
 
         String[] cols = {"Mã GV", "Họ Tên", "Giới Tính", "Học Vị", "SĐT", "Email", "Mã Khoa"};
@@ -258,7 +260,7 @@ public class AdminUserPanel extends JPanel {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         tblGV = new JTable(modelGV);
-        UIUtils.styleTable(tblGV);
+        UIUtils.styleTable(tblGV);UIUtils.columnWidths(tblGV,100,210,80,110,135,245,110);
         tblGV.setShowGrid(true);
         tblGV.setGridColor(UIUtils.BORDER);
         tblGV.setIntercellSpacing(new Dimension(1, 1));
@@ -269,6 +271,7 @@ public class AdminUserPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(tblGV);
         scroll.setBorder(new MatteBorder(1, 0, 0, 0, UIUtils.BORDER));
 
+        tableHeader.add(utils.Ui.tableTools(tblGV,"Giang_vien"),BorderLayout.SOUTH);
         tableWrapper.add(tableHeader, BorderLayout.NORTH);
         tableWrapper.add(scroll, BorderLayout.CENTER);
 
@@ -282,10 +285,10 @@ public class AdminUserPanel extends JPanel {
         // Tiêu đề form với gạch chân màu Đỏ mận
         JPanel formHeader = new JPanel(new BorderLayout());
         formHeader.setBackground(Color.WHITE);
-        formHeader.setBorder(new MatteBorder(0, 0, 2, 0, new Color(153, 27, 27))); 
-        JLabel lblFormTitle = new JLabel("THÔNG TIN CHI TIẾT GIẢNG VIÊN");
+        formHeader.setBorder(new MatteBorder(0, 0, 2, 0, UIUtils.MIT_RED)); 
+        JLabel lblFormTitle = new JLabel("Thông tin giảng viên");
         lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblFormTitle.setForeground(new Color(153, 27, 27));
+        lblFormTitle.setForeground(UIUtils.MIT_RED);
         lblFormTitle.setBorder(new EmptyBorder(0, 0, 8, 0));
         formHeader.add(lblFormTitle, BorderLayout.WEST);
 
@@ -334,6 +337,7 @@ public class AdminUserPanel extends JPanel {
         // --- GẮN SỰ KIỆN CỦA BẢNG VÀ NÚT BẤM ---
         tblGV.getSelectionModel().addListSelectionListener(e -> {
             int r = tblGV.getSelectedRow();
+            if(r>=0)r=tblGV.convertRowIndexToModel(r);
             if(r >= 0 && !e.getValueIsAdjusting()) {
                 txtMaGV.setText(modelGV.getValueAt(r, 0) != null ? modelGV.getValueAt(r, 0).toString() : "");
                 txtHoTenGV.setText(modelGV.getValueAt(r, 1) != null ? modelGV.getValueAt(r, 1).toString() : "");
@@ -402,16 +406,9 @@ public class AdminUserPanel extends JPanel {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    private void executeDB(String sql, String actionName, Object... params) {
-        try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
-            ps.executeUpdate();
-            JOptionPane.showMessageDialog(this, actionName + " thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi " + actionName + ": " + e.getMessage(), "Lỗi Database", JOptionPane.ERROR_MESSAGE);
-        }
+    private void executeDB(String sql,String actionName,Object... params){
+        try{new service.PersonService().execute(sql,actionName,params);JOptionPane.showMessageDialog(this,actionName+" thành công.");}
+        catch(Exception e){utils.Ui.error(this,e);}
     }
 
     private void clearFormSV() {
@@ -438,8 +435,8 @@ public class AdminUserPanel extends JPanel {
         wrapper.setBorder(new EmptyBorder(0, 0, 5, 0)); // Bottom margin rất mỏng
         
         JLabel lbl = new JLabel(labelText);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setForeground(new Color(71, 85, 105)); // Màu ghi xám
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setForeground(UIUtils.MIT_RED); // Màu ghi xám
         lbl.setBorder(new EmptyBorder(0, 0, 3, 0)); 
         
         wrapper.add(lbl, BorderLayout.NORTH);
@@ -458,38 +455,12 @@ public class AdminUserPanel extends JPanel {
     }
 
     private void setToggleStyle(JButton btn, boolean isActive) {
-        if (isActive) {
-            btn.setBackground(new Color(37, 99, 235)); 
-            btn.setForeground(Color.WHITE);
-            btn.setBorder(new EmptyBorder(12, 30, 12, 30));
-        } else {
-            btn.setBackground(Color.WHITE);
-            btn.setForeground(UIUtils.TEXT_MUTED);
-            btn.setBorder(BorderFactory.createCompoundBorder(
-                new MatteBorder(1, 1, 1, 1, UIUtils.BORDER), new EmptyBorder(11, 29, 11, 29)
-            ));
-        }
+        UIUtils.styleToggle(btn,isActive);
     }
 
     // Tạo nút bấm với màu sắc cực kỳ rực rỡ và bắt mắt
     private JButton createActionButton(String text, Color bgColor) {
-        JButton btn = new JButton(text);
-        btn.setUI(new javax.swing.plaf.basic.BasicButtonUI()); // Xóa lớp phủ nhạt màu của Windows
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setBackground(bgColor);
-        btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(bgColor.darker(), 1, true),
-            new EmptyBorder(8, 20, 8, 20)
-        ));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btn.setBackground(bgColor.brighter()); }
-            public void mouseExited(MouseEvent e) { btn.setBackground(bgColor); }
-        });
-        return btn;
+        return UIUtils.createActionButton(text);
     }
 
     class ZebraRenderer extends DefaultTableCellRenderer {
@@ -497,9 +468,9 @@ public class AdminUserPanel extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
-                c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
+                c.setBackground(row % 2 == 0 ? Color.WHITE : UIUtils.BLUE_SOFT);
             } else {
-                c.setBackground(UIUtils.MIT_RED_LIGHT);
+                c.setBackground(UIUtils.BLUE_LIGHT);
             }
             c.setForeground(UIUtils.TEXT_MAIN);
             setBorder(BorderFactory.createCompoundBorder(

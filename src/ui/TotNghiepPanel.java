@@ -19,7 +19,7 @@ public class TotNghiepPanel extends JPanel {
     // --- CÁC BIẾN LƯU TRỮ DỮ LIỆU ĐỂ XÉT ĐIỀU KIỆN ---
     private String hoTen = "Đang tải...";
     private int tinChiTichLuy = 0;
-    private int tinChiYeuCau = 150;
+    private int tinChiYeuCau = 0;
     private double tongNo = 0.0;
     private boolean hasNoHocPhi = false;
     private boolean isDatNgoaiNgu = false;
@@ -34,7 +34,7 @@ public class TotNghiepPanel extends JPanel {
         setLayout(new BorderLayout());
         setBackground( Color.WHITE);
         setBorder(new LineBorder(UIUtils.BORDER, 1, true));
-        add(buildSectionHeader("Thẩm Định Điều Kiện Tốt Nghiệp"), BorderLayout.NORTH);
+        add(buildSectionHeader("Thẩm định điều kiện tốt nghiệp"), BorderLayout.NORTH);
 
         boolean tcOk  = (tinChiTichLuy >= tinChiYeuCau);
         boolean noOk  = !hasNoHocPhi;
@@ -48,18 +48,18 @@ public class TotNghiepPanel extends JPanel {
         body.setBorder(new EmptyBorder(25, 30, 30, 30));
 
         // ─── Banner trang thai tong ────────────────────────────────
-        Color sBg  = allOk ? new Color(240,253,244) : new Color(254,242,242);
-        Color sAcc = allOk ? new Color(22,101,52)   : new Color(185,28,28);
-        Color sBdr = allOk ? new Color(134,239,172) : new Color(252,165,165);
+        Color sBg  = allOk ? new Color(240,253,244) : UIUtils.MIT_RED_LIGHT;
+        Color sAcc = allOk ? new Color(22,101,52)   : UIUtils.MIT_RED;
+        Color sBdr = allOk ? new Color(189,223,201) : new Color(234,205,205);
 
         JPanel banner = new JPanel(new BorderLayout(16, 0));
         banner.setBackground(sBg);
         banner.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(sBdr, 1, true), new EmptyBorder(14, 20, 14, 20)));
+            UIUtils.cardBorder(sBdr, 1), new EmptyBorder(14, 20, 14, 20)));
         banner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
         banner.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel icoLbl = new JLabel(allOk ? "[OK]" : "[!!]");
+        JLabel icoLbl = new JLabel(allOk ? "Đạt" : "!");
         icoLbl.setFont(new Font("Segoe UI", Font.BOLD, 20));
         icoLbl.setForeground(sAcc);
 
@@ -113,93 +113,29 @@ public class TotNghiepPanel extends JPanel {
         body.add(Box.createVerticalStrut(25));
 
         // ─── Nut gui yeu cau ──────────────────────────────────────
-        JButton btnXet = UIUtils.createPrimaryBtn("  GỬI YÊU CẦU XÉT DUYỆT CHÍNH THỨC");
+        JButton btnXet = UIUtils.createPrimaryBtn("Kiểm tra điều kiện hiện tại");
         btnXet.setMaximumSize(new Dimension(440, 46));
         btnXet.setAlignmentX(Component.LEFT_ALIGNMENT);
         body.add(btnXet);
         body.add(Box.createVerticalStrut(18));
 
         // ─── Panel ket qua (an, hien sau khi bam nut) ────────────
-        Color rBg  = allOk ? new Color(240,253,244) : new Color(254,242,242);
-        Color rBdr = allOk ? new Color(134,239,172) : new Color(252,165,165);
+        Color rBg  = allOk ? new Color(240,253,244) : UIUtils.MIT_RED_LIGHT;
+        Color rBdr = allOk ? new Color(189,223,201) : new Color(234,205,205);
 
         JPanel resultPanel = new JPanel(new BorderLayout());
         resultPanel.setBackground(rBg);
         resultPanel.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(rBdr, 1, true), new EmptyBorder(18, 22, 18, 22)));
+            UIUtils.cardBorder(rBdr, 1), new EmptyBorder(18, 22, 18, 22)));
         resultPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
         resultPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         resultPanel.setVisible(false);
 
-        btnXet.addActionListener(e -> {
-            btnXet.setEnabled(false);
-            btnXet.setText("Đang xét duyệt...");
-
-            new Thread(() -> {
-                // Goi service de lay ket qua day du tu DB
-                String rawResult = service.checkGraduation(currentMaSV);
-                String ts = new java.text.SimpleDateFormat("dd/MM/yyyy  HH:mm:ss")
-                                  .format(new java.util.Date());
-
-                // Giả lập delay 1 xíu cho đẹp mắt
-                try { Thread.sleep(600); } catch (Exception ex) {}
-
-                SwingUtilities.invokeLater(() -> {
-                    JPanel rc = new JPanel();
-                    rc.setLayout(new BoxLayout(rc, BoxLayout.Y_AXIS));
-                    rc.setBackground(rBg);
-
-                    // Tieu de ket qua
-                    JLabel lblRT = new JLabel(
-                        (allOk ? "[OK]  ĐỦ ĐIỀU KIỆN TỐT NGHIỆP"
-                               : "[XX]  CHƯA ĐỦ ĐIỀU KIỆN TỐT NGHIỆP"));
-                    lblRT.setFont(new Font("Segoe UI", Font.BOLD, 15));
-                    lblRT.setForeground(allOk ? new Color(22,101,52) : new Color(185,28,28));
-                    lblRT.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-                    JSeparator sep2 = new JSeparator();
-                    sep2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-                    sep2.setForeground(rBdr);
-                    sep2.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-                    // Chi tiet ket qua dang text (tu service tra ve)
-                    JTextArea txtDetail = new JTextArea(rawResult);
-                    txtDetail.setFont(new Font("Consolas", Font.PLAIN, 14));
-                    txtDetail.setEditable(false);
-                    txtDetail.setBackground(rBg);
-                    txtDetail.setForeground(UIUtils.TEXT_MAIN);
-                    txtDetail.setBorder(BorderFactory.createEmptyBorder());
-                    txtDetail.setLineWrap(true);
-                    txtDetail.setWrapStyleWord(true);
-                    txtDetail.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-                    // Timestamp + Ma SV
-                    JLabel lblTs = new JLabel(
-                        "Xét duyệt lúc: " + ts + "  |  Mã SV: " + currentMaSV);
-                    lblTs.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-                    lblTs.setForeground(UIUtils.TEXT_MUTED);
-                    lblTs.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-                    rc.add(lblRT);
-                    rc.add(Box.createVerticalStrut(10));
-                    rc.add(sep2);
-                    rc.add(Box.createVerticalStrut(10));
-                    rc.add(txtDetail);
-                    rc.add(Box.createVerticalStrut(10));
-                    rc.add(lblTs);
-
-                    resultPanel.removeAll();
-                    resultPanel.add(rc, BorderLayout.CENTER);
-                    resultPanel.setVisible(true);
-                    resultPanel.revalidate();
-                    resultPanel.repaint();
-
-                    btnXet.setText(allOk
-                        ? "[OK]  Đã đủ điều kiện - xem kết quả bên dưới"
-                        : "[!!]  Chưa đủ - xem chi tiết bên dưới");
-                });
-            }).start();
-        });
+        btnXet.addActionListener(e -> utils.Ui.async(this,btnXet,()->service.checkGraduation(currentMaSV),rawResult->{
+            JTextArea detail=new JTextArea(rawResult+"\n\nKiểm tra lúc: "+java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
+            detail.setEditable(false);detail.setFont(UIUtils.FONT_NORMAL);detail.setLineWrap(true);detail.setWrapStyleWord(true);detail.setBackground(rBg);
+            resultPanel.removeAll();resultPanel.add(detail);resultPanel.setVisible(true);resultPanel.revalidate();resultPanel.repaint();
+        }));
 
         body.add(resultPanel);
         body.add(Box.createVerticalGlue());
@@ -221,20 +157,14 @@ public class TotNghiepPanel extends JPanel {
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) {
                     hoTen = rs.getString("HoTen");
-                    isDatNgoaiNgu = rs.getBoolean("DatChuanNgoaiNgu");
+                    isDatNgoaiNgu = service.AcademicService.languagePassed(rs.getObject("DatChuanNgoaiNgu"));
                 }
             }
 
-            // 2. Lấy Tín chỉ tích lũy
-            String sql2 = "SELECT SUM(CAST(m.SoTinChi AS INT)) FROM KET_QUA_DANG_KY kq JOIN LOP_HOC_PHAN lhp ON kq.MaLHP = lhp.MaLHP JOIN MON_HOC m ON lhp.MaMon = m.MaMon WHERE kq.MaSV = ? AND kq.TrangThai = N'Đạt'";
-            try (PreparedStatement ps = conn.prepareStatement(sql2)) {
-                ps.setString(1, currentMaSV);
-                ResultSet rs = ps.executeQuery();
-                if (rs.next()) tinChiTichLuy = rs.getInt(1);
-            }
-
+            tinChiTichLuy=service.AcademicService.summary(currentMaSV,null).earned();
+            tinChiYeuCau=service.AcademicService.requiredCredits(currentMaSV);
             // 3. Lấy Thông tin Nợ học phí
-            String sql3 = "SELECT SUM(CAST(TongTienPhaiDong AS FLOAT) - CAST(SoTienDaDong AS FLOAT)) FROM CONG_NO_HOC_PHI WHERE MaSV = ? AND TrangThai != N'Đã hoàn thành'";
+            String sql3 = "SELECT SUM(CAST(TongTienPhaiDong AS FLOAT) - CAST(SoTienDaDong AS FLOAT)) FROM CONG_NO_HOC_PHI WHERE MaSV = ? AND TRY_CONVERT(decimal(18,2),TongTienPhaiDong) > COALESCE(TRY_CONVERT(decimal(18,2),TRY_CONVERT(float,SoTienDaDong)),0)";
             try (PreparedStatement ps = conn.prepareStatement(sql3)) {
                 ps.setString(1, currentMaSV);
                 ResultSet rs = ps.executeQuery();
@@ -244,7 +174,7 @@ public class TotNghiepPanel extends JPanel {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Không đủ dữ liệu để xét tốt nghiệp.",e);
         }
     }
 
@@ -257,14 +187,14 @@ public class TotNghiepPanel extends JPanel {
     private JPanel buildCondCard(String title, String requirement,
                                  String statusText, boolean passed,
                                  int current, int max) {
-        Color bg  = passed ? new Color(240,253,244) : new Color(254,242,242);
-        Color acc = passed ? new Color(22,101,52)   : new Color(185,28,28);
-        Color bdr = passed ? new Color(134,239,172) : new Color(252,165,165);
+        Color bg  = passed ? new Color(240,253,244) : UIUtils.MIT_RED_LIGHT;
+        Color acc = passed ? new Color(22,101,52)   : UIUtils.MIT_RED;
+        Color bdr = passed ? new Color(189,223,201) : new Color(234,205,205);
 
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(bg);
         card.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(bdr, 1, true), new EmptyBorder(16, 18, 16, 18)));
+            UIUtils.cardBorder(bdr, 1), new EmptyBorder(16, 18, 16, 18)));
 
         // Header: ten + icon [OK]/[X]
         JPanel topRow = new JPanel(new BorderLayout(8, 0));
@@ -274,7 +204,7 @@ public class TotNghiepPanel extends JPanel {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblTitle.setForeground(UIUtils.TEXT_MAIN);
 
-        JLabel lblIco = new JLabel(passed ? "[OK]" : "[ X]");
+        JLabel lblIco = new JLabel(passed ? "Đạt" : "!");
         lblIco.setFont(new Font("Segoe UI", Font.BOLD, 13));
         lblIco.setForeground(acc);
 
@@ -305,8 +235,8 @@ public class TotNghiepPanel extends JPanel {
             JProgressBar bar = new JProgressBar(0, max);
             bar.setValue(Math.min(current, max));
             bar.setStringPainted(false);
-            bar.setForeground(passed ? new Color(34,197,94) : new Color(239,68,68));
-            bar.setBackground(passed ? new Color(220,252,231) : new Color(254,226,226));
+            bar.setForeground(passed ? new Color(34,197,94) : UIUtils.MIT_RED);
+            bar.setBackground(passed ? new Color(220,252,231) : new Color(242,215,215));
             bar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 6));
             bar.setBorderPainted(false);
             bar.setAlignmentX(Component.LEFT_ALIGNMENT);

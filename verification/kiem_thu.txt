@@ -1,0 +1,90 @@
+Da bien dich thanh cong. Chay RUN.bat de mo ung dung.
+PASS Vietnamese weekday normalization
+PASS Boundary period conflict
+PASS Adjacent periods allowed
+PASS Different weekdays allowed
+PASS Period range and list parsing
+PASS Reject reversed range
+PASS Reject zero period
+PASS Reject out of range
+PASS Reject ambiguous day
+PASS Zero differs from ungraded
+PASS Reject NaN grade
+PASS Reject infinite grade
+PASS Reject grade above 10
+PASS Weighted grade calculation
+PASS Unique earned credits with repeat attempts
+PASS Weighted GPA includes failed zero grade
+PASS Per-course grade point conversion
+PASS Grade boundaries
+PASS Legacy language qualification
+PASS CSV commas quotes and newlines preserved
+PASS CSV formula escaping
+PASS Reject negative payment
+PASS Reject zero payment
+PASS Reject excessive decimal precision
+PASS Reject invalid calendar date
+PASS Valid leap-day birthday
+PASS Require name
+PASS Random salt per credential
+PASS Password hash round trip
+PASS Password whitespace preserved
+PASS Reject malformed hash
+PASS Student cannot invoke staff services
+PASS Student cannot act for other students
+PASS Logged out session denied
+CORE TESTS: 34 passed
+PASS Configuration belongs to application folder
+PASS Missing config selects upgraded database, never original database
+PASS Fresh download requests first-run setup
+PASS Missing password gives setup instructions before connecting
+PASS GitHub example supplies first-run defaults
+PASS Local configuration takes precedence over example
+PASS Unicode and password whitespace survive properties round trip
+PASS Configured installation does not request setup again
+PASS Relative override resolves against application directory
+PASS Absolute external configuration is supported
+PASS SQL authentication error is actionable
+PASS Unavailable database has distinct guidance
+CONFIGURATION TESTS: 12 passed
+PASS Bootstrap cannot create second administrator [IllegalArgumentException]
+PASS Provisioned account requires password change
+PASS Password change persisted
+PASS Incorrect password rejected 1 [IllegalArgumentException]
+PASS Incorrect password rejected 2 [IllegalArgumentException]
+PASS Incorrect password rejected 3 [IllegalArgumentException]
+PASS Incorrect password rejected 4 [IllegalArgumentException]
+PASS Incorrect password rejected 5 [IllegalArgumentException]
+PASS Lockout after five failed attempts [IllegalArgumentException]
+PASS Staff unlock restores login
+PASS Registration persisted
+PASS Tuition generated with registration
+PASS Duplicate registration rejected [IllegalArgumentException]
+PASS Second section of same course rejected [IllegalArgumentException]
+PASS Overlapping schedule rejected [IllegalArgumentException]
+PASS All prerequisites required [IllegalArgumentException]
+PASS Full class rejected [IllegalArgumentException]
+PASS Credit maximum enforced [IllegalArgumentException]
+PASS Closed registration period enforced for cancellation [IllegalArgumentException]
+PASS Tuition failure aborts registration [IllegalArgumentException]
+PASS Failed transaction leaves no enrollment
+PASS Student cannot record payment [IllegalStateException]
+PASS Payment retry cannot double charge
+PASS Overpayment rejected [IllegalArgumentException]
+PASS Partial payments add numerically in legacy text column
+PASS Cancellation preserves paid credit balance
+PASS Zero grade blocks cancellation [IllegalArgumentException]
+PASS Concurrent grade change detected [IllegalArgumentException]
+PASS Graduation threshold from actual degree program
+PASS Cannot cascade-delete a student with history [IllegalArgumentException]
+PASS Teacher schedule conflict rejected [IllegalArgumentException]
+PASS Cannot delete enrolled class [IllegalArgumentException]
+PASS Concurrent clients completed
+PASS Last seat sold once across two processes
+PASS Exactly one concurrent registration succeeds
+PASS Import preview flags duplicate and invalid date
+PASS Import commits valid rows only
+PASS Existing IDs not counted as successful imports
+PASS Weekly schedule uses actual registrations
+PASS Mutations write audit entries
+INTEGRATION TESTS: 40 passed

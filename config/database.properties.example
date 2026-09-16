@@ -1,0 +1,4 @@
+# Copy to database.properties, or use "Ket noi du lieu" in the login screen.
+db.url=jdbc:sqlserver://localhost:1433;databaseName=QuanLyTinChi_NangCap_20260914;encrypt=true;trustServerCertificate=true
+db.user=sa
+db.password=

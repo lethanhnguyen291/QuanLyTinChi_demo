@@ -42,7 +42,7 @@ public class AdminDashboardPanel extends JPanel {
         tableHeader.setBorder(new EmptyBorder(15, 20, 15, 20));
         lblTableTitle = new JLabel("Lớp học phần đang mở (Kỳ này)");
         lblTableTitle.setFont(UIUtils.FONT_BOLD);
-        lblTableTitle.setForeground(UIUtils.TEXT_MAIN);
+        lblTableTitle.setForeground(UIUtils.BLUE_DARK);
         tableHeader.add(lblTableTitle, BorderLayout.WEST);
 
         String[] columns = {"Mã LHP", "Tên Môn", "TC", "Lịch học", "Phòng", "Sĩ số", "Trạng thái"};
@@ -51,7 +51,7 @@ public class AdminDashboardPanel extends JPanel {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         table = new JTable(tableModel);
-        UIUtils.styleTable(table);
+        UIUtils.styleTable(table);UIUtils.columnWidths(table,140,240,50,195,90,90,125);
         
         // Kẻ lưới cho bảng đẹp hơn
         table.setShowGrid(true);
@@ -133,7 +133,8 @@ public class AdminDashboardPanel extends JPanel {
                     while (rs.next()) {
                         int daDk = rs.getInt("DaDK");
                         int sucChua = rs.getInt("SucChua");
-                        String lichHoc = "Thứ " + rs.getString("Thu") + " (Tiết " + rs.getString("TietHoc") + ")";
+                        String thu = rs.getString("Thu");
+                        String lichHoc = (thu != null && thu.matches("[2-7]") ? "Thứ " + thu : thu) + " (Tiết " + rs.getString("TietHoc") + ")";
                         String siSo = daDk + " / " + sucChua;
                         String trangThai = daDk >= sucChua ? "Đã đầy" : "Còn chỗ";
                         
@@ -170,33 +171,7 @@ public class AdminDashboardPanel extends JPanel {
     // TIỆN ÍCH VẼ GIAO DIỆN (UI BUILDERS)
     // ========================================================
     private JPanel createColoredStatCard(String title, String val, int iconType, Color bgColor, Color textColor) {
-        JPanel card = new JPanel(new BorderLayout(10, 0)); 
-        card.setBackground(bgColor); 
-        card.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(bgColor.darker(), 1, true), new EmptyBorder(15, 20, 15, 20)
-        ));
-        
-        JPanel textPanel = new JPanel();
-        textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
-        textPanel.setBackground(bgColor);
-        
-        JLabel lT = new JLabel(title); 
-        lT.setFont(new Font("Segoe UI", Font.BOLD, 13)); 
-        lT.setForeground(new Color(100, 116, 139));
-        
-        JLabel lV = new JLabel(val); 
-        lV.setFont(new Font("Segoe UI", Font.BOLD, 22)); 
-        lV.setForeground(textColor);
-        
-        textPanel.add(lT); 
-        textPanel.add(Box.createVerticalStrut(5));
-        textPanel.add(lV);
-        
-        JLabel lIcon = new JLabel(new StatVectorIcon(iconType, textColor));
-        
-        card.add(textPanel, BorderLayout.CENTER); 
-        card.add(lIcon, BorderLayout.EAST); 
-        return card;
+        return UIUtils.statCard(title,val,iconType>=3?UIUtils.MIT_RED:UIUtils.BLUE);
     }
 
     // ========================================================
@@ -207,9 +182,9 @@ public class AdminDashboardPanel extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
-                c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
+                c.setBackground(row % 2 == 0 ? Color.WHITE : UIUtils.BLUE_SOFT);
             } else {
-                c.setBackground(UIUtils.MIT_RED_LIGHT);
+                c.setBackground(UIUtils.BLUE_LIGHT);
             }
             
             // Xử lý màu chữ cho cột Trạng thái
