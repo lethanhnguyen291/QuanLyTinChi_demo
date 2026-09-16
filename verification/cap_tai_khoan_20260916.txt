@@ -1,0 +1,15 @@
+PASS Students cannot batch-create accounts
+PASS Short temporary password rejected
+PASS Create missing accounts once despite duplicate IDs
+PASS Separate salt for each student's password hash
+PASS New students can log in and must change temporary password
+PASS Repeat batch skips existing accounts
+PASS Existing password, lock and first-login state are preserved
+PASS Mixed batch only creates the missing account
+PASS Unknown student rejects batch before writes
+PASS Rejected batch leaves no partial account
+PASS SQL failure aborts batch
+PASS Whole account batch rolls back on SQL failure
+PASS Only committed account creations enter audit log
+PASS Test fixtures cleaned; existing data and accounts retained
+ACCOUNT PROVISION TESTS: 14 passed

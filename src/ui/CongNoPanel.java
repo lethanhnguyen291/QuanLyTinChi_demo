@@ -46,7 +46,7 @@ public class CongNoPanel extends JPanel {
             new EmptyBorder(20, 20, 20, 20)
         ));
 
-        JLabel lblTitle = new JLabel("Bảng theo dõi Thanh toán Học phí");
+        JLabel lblTitle = new JLabel("Theo dõi thanh toán học phí");
         lblTitle.setFont(UIUtils.FONT_TITLE);
         
         // 👉 2. Đổi màu chữ Tiêu đề thành Xanh đậm
@@ -105,6 +105,7 @@ public class CongNoPanel extends JPanel {
         table.getColumnModel().getColumn(0).setPreferredWidth(80);
         table.getColumnModel().getColumn(1).setPreferredWidth(200);
         table.getColumnModel().getColumn(5).setPreferredWidth(120);
+        UIUtils.columnWidths(table,100,265,180,160,160,170);
 
         // Giữ nguyên đoạn tô màu dòng và Badge của bạn
         RowColorRenderer rowColorRenderer = new RowColorRenderer();
@@ -125,7 +126,7 @@ public class CongNoPanel extends JPanel {
         bottomPanel.setBackground(UIUtils.WHITE);
         bottomPanel.setBorder(new EmptyBorder(0, 20, 0, 20));
 
-        btnThanhToan = new JButton("CHỌN HỌC KỲ ĐỂ THANH TOÁN");
+        btnThanhToan = new JButton("CHỌN HỌC KỲ ĐỂ XEM");
         btnThanhToan.setIcon(new CreditCardIcon()); 
         btnThanhToan.setIconTextGap(12);
         btnThanhToan.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -162,7 +163,7 @@ public class CongNoPanel extends JPanel {
                     btnThanhToan.setEnabled(true);
                     btnThanhToan.setBackground(COLOR_PAY_ACTIVE);
                     btnThanhToan.setIcon(new CreditCardIcon()); 
-                    btnThanhToan.setText("THANH TOÁN KỲ NÀY");
+                    btnThanhToan.setText("HƯỚNG DẪN NỘP HỌC PHÍ");
                 }
             }
         });
@@ -188,8 +189,8 @@ public class CongNoPanel extends JPanel {
                     String tenHK = rs.getString("TenHK") != null ? rs.getString("TenHK") : maHK;
                     double tongPhaiDong = rs.getDouble("TongTienPhaiDong");
                     double daDong = rs.getDouble("SoTienDaDong");
-                    double conNo = tongPhaiDong - daDong;
-                    String trangThai = rs.getString("TrangThai");
+                    double conNo = Math.max(0, tongPhaiDong - daDong);
+                    String trangThai = conNo == 0 ? "Đã hoàn thành" : daDong > 0 ? "Còn nợ" : "Chưa đóng";
 
                     tongTienNoToanKhoa += conNo;
 
@@ -215,10 +216,10 @@ public class CongNoPanel extends JPanel {
             btnThanhToan.setEnabled(false);
             btnThanhToan.setBackground(COLOR_PAY_DISABLED);
             btnThanhToan.setIcon(new CreditCardIcon());
-            btnThanhToan.setText("CHỌN HỌC KỲ ĐỂ THANH TOÁN");
+            btnThanhToan.setText("CHỌN HỌC KỲ ĐỂ XEM");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            lblTongNo.setText("Chưa tải được công nợ"); utils.Ui.error(this,e);
         }
     }
 
@@ -226,26 +227,7 @@ public class CongNoPanel extends JPanel {
     // LOGIC NÚT THANH TOÁN VÀO CSDL
     // ==========================================
     private void actionThanhToan() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) return; 
-
-        String maHK = table.getValueAt(selectedRow, 0).toString();
-        String tenHK = table.getValueAt(selectedRow, 1).toString();
-        String tienNoStr = table.getValueAt(selectedRow, 4).toString();
-
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "Xác nhận thanh toán công nợ cho [" + tenHK + "] với số tiền " + tienNoStr + " VNĐ?", 
-            "Xác nhận thanh toán", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-            
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                String msg = service.thanhToanCongNo(maSV, maHK);
-                JOptionPane.showMessageDialog(this, msg, "Giao dịch thành công", JOptionPane.INFORMATION_MESSAGE);
-                loadTableData();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi thanh toán", JOptionPane.ERROR_MESSAGE);
-            }
-        }
+        JOptionPane.showMessageDialog(this,"Nộp học phí theo hướng dẫn chính thức của nhà trường.\nCán bộ đào tạo ghi nhận số tiền sau khi đối soát.\nỨng dụng chưa tích hợp cổng thanh toán trực tuyến.","Hướng dẫn nộp học phí",JOptionPane.INFORMATION_MESSAGE);
     }
 
     // ========================================================
@@ -286,22 +268,22 @@ public class CongNoPanel extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             String status = "";
-            Object statusObj = table.getModel().getValueAt(row, 5);
+            Object statusObj = table.getModel().getValueAt(table.convertRowIndexToModel(row), 5);
             if (statusObj != null) status = statusObj.toString();
 
             if (!isSelected) {
                 if (status.equalsIgnoreCase("Đã hoàn thành")) {
                     c.setBackground(new Color(240, 253, 244)); 
-                    c.setForeground(new Color(21, 128, 61));
+                    c.setForeground(column == 4 ? UIUtils.GREEN_500 : UIUtils.TEXT_MAIN);
                 } else if (status.equalsIgnoreCase("Chưa đóng") || status.toLowerCase().contains("nợ")) {
                     c.setBackground(new Color(254, 226, 226)); 
-                    c.setForeground(new Color(220, 38, 38));
+                    c.setForeground(column == 4 ? UIUtils.MIT_RED : UIUtils.TEXT_MAIN);
                 } else {
-                    c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
+                    c.setBackground(row % 2 == 0 ? Color.WHITE : UIUtils.BLUE_SOFT);
                     c.setForeground(UIUtils.TEXT_MAIN);
                 }
             } else {
-                c.setBackground(UIUtils.MIT_RED_LIGHT);
+                c.setBackground(UIUtils.BLUE_LIGHT);
                 c.setForeground(UIUtils.MIT_RED);
             }
             
@@ -334,14 +316,14 @@ public class CongNoPanel extends JPanel {
                     p.setBackground(new Color(240, 253, 244)); 
                     lbl.setForeground(new Color(21, 128, 61));
                 } else if (status.equalsIgnoreCase("Chưa đóng") || status.toLowerCase().contains("nợ")) {
-                    p.setBackground(new Color(254, 226, 226)); 
-                    lbl.setForeground(new Color(220, 38, 38));
+                    p.setBackground(UIUtils.MIT_RED_LIGHT);
+                    lbl.setForeground(UIUtils.MIT_RED);
                 } else {
-                    p.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252)); 
+                    p.setBackground(row % 2 == 0 ? Color.WHITE : UIUtils.BLUE_SOFT); 
                     lbl.setForeground(new Color(71, 85, 105));
                 }
             } else {
-                p.setBackground(UIUtils.MIT_RED_LIGHT);
+                p.setBackground(UIUtils.BLUE_LIGHT);
                 lbl.setForeground(UIUtils.MIT_RED);
             }
             

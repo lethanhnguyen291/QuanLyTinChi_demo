@@ -17,6 +17,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 public class AdminCongNoPanel extends JPanel {
+    private String currentMaHK="";
+    private String pendingPaymentKey,pendingPaymentId;
     private static final long serialVersionUID = 1L;
     
     private DefaultTableModel model;
@@ -43,9 +45,9 @@ public class AdminCongNoPanel extends JPanel {
         
         JLabel lblTblTitle = new JLabel("Bảng Danh Sách Công Nợ Học Phí Toàn Trường");
         lblTblTitle.setFont(UIUtils.FONT_TITLE);
-        lblTblTitle.setForeground(UIUtils.TEXT_MAIN);
+        lblTblTitle.setForeground(UIUtils.BLUE_DARK);
         
-        lblTongNoToanTruong = new JLabel("Tổng nợ toàn trường: 0 VNĐ");
+        lblTongNoToanTruong = new JLabel("Tổng nợ học kỳ: 0 VNĐ");
         lblTongNoToanTruong.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTongNoToanTruong.setForeground(UIUtils.RED_500);
 
@@ -77,6 +79,7 @@ public class AdminCongNoPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(new MatteBorder(1, 0, 0, 0, UIUtils.BORDER));
 
+        tableHeader.add(utils.Ui.tableTools(table,"Cong_no"),BorderLayout.SOUTH);
         tableWrapper.add(tableHeader, BorderLayout.NORTH);
         tableWrapper.add(scroll, BorderLayout.CENTER);
 
@@ -92,10 +95,10 @@ public class AdminCongNoPanel extends JPanel {
         // Tiêu đề form với gạch chân màu Xanh ngọc
         JPanel formHeader = new JPanel(new BorderLayout());
         formHeader.setBackground(Color.WHITE);
-        formHeader.setBorder(new MatteBorder(0, 0, 2, 0, new Color(16, 185, 129))); 
-        JLabel lblFormTitle = new JLabel("GHI NHẬN THANH TOÁN HỌC PHÍ");
+        formHeader.setBorder(new MatteBorder(0, 0, 2, 0, UIUtils.MIT_RED)); 
+        JLabel lblFormTitle = new JLabel("Ghi nhận thanh toán học phí");
         lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblFormTitle.setForeground(new Color(16, 185, 129));
+        lblFormTitle.setForeground(UIUtils.MIT_RED);
         lblFormTitle.setBorder(new EmptyBorder(0, 0, 8, 0));
         formHeader.add(lblFormTitle, BorderLayout.WEST);
 
@@ -110,8 +113,8 @@ public class AdminCongNoPanel extends JPanel {
         
         txtTienThu = UIUtils.createInput();
 
-        inputGrid.add(createCompactFormRow("Mã Phiếu Thu (Chọn từ danh sách):", txtMaPhieu));
-        inputGrid.add(createCompactFormRow("Số Tiền Thu (VNĐ):", txtTienThu));
+        inputGrid.add(createCompactFormRow("Mã phiếu thu (chọn từ danh sách)", txtMaPhieu));
+        inputGrid.add(createCompactFormRow("Số tiền thu (VNĐ)", txtTienThu));
         inputGrid.add(new JLabel("")); // Spacer để form đỡ dài
 
         // ========================================================
@@ -120,7 +123,7 @@ public class AdminCongNoPanel extends JPanel {
         JPanel btnGrid = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         btnGrid.setBackground(Color.WHITE);
 
-        JButton btnThuTien = createActionButton("XÁC NHẬN THU TIỀN", new Color(25, 135, 84));
+        JButton btnThuTien = createActionButton("Xác nhận thu tiền", new Color(25, 135, 84));
 
         btnGrid.add(btnThuTien);
 
@@ -137,6 +140,7 @@ public class AdminCongNoPanel extends JPanel {
         // ========================================================
         table.getSelectionModel().addListSelectionListener(e -> {
             int r = table.getSelectedRow();
+            if(r>=0)r=table.convertRowIndexToModel(r);
             if(r >= 0 && !e.getValueIsAdjusting()) {
                 txtMaPhieu.setText(model.getValueAt(r, 0).toString());
                 // Tự động điền số tiền còn nợ vào ô nhập
@@ -147,32 +151,18 @@ public class AdminCongNoPanel extends JPanel {
 
         btnThuTien.addActionListener(e -> {
             String maPhieu = txtMaPhieu.getText().trim();
-            String tienThuStr = txtTienThu.getText().trim().replaceAll("[^0-9]", "");
-
-            if (maPhieu.isEmpty() || tienThuStr.isEmpty() || tienThuStr.equals("0")) {
-                JOptionPane.showMessageDialog(this, "Vui lòng chọn phiếu nợ và nhập số tiền hợp lệ!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            double tienThu = Double.parseDouble(tienThuStr);
-
+            java.math.BigDecimal amount;
+            try { amount=new java.math.BigDecimal(txtTienThu.getText().trim());service.PaymentService.validate(amount);if(maPhieu.isBlank())throw new IllegalArgumentException("Chọn phiếu học phí."); }
+            catch(Exception ex){utils.Ui.error(this,ex);return;}
+            double tienThu=amount.doubleValue();
             int confirm = JOptionPane.showConfirmDialog(this, "Xác nhận thu " + String.format("%,.0f", tienThu) + " VNĐ cho phiếu " + maPhieu + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                // UPDATE số tiền đã đóng và tự động kiểm tra Trạng thái xem đã đủ hay chưa
-                String sql = "UPDATE CONG_NO_HOC_PHI SET SoTienDaDong = SoTienDaDong + ?, TrangThai = CASE WHEN TongTienPhaiDong <= SoTienDaDong + ? THEN N'Đã hoàn thành' ELSE N'Còn nợ' END WHERE MaPhieu = ?";
-                try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setDouble(1, tienThu);
-                    ps.setDouble(2, tienThu);
-                    ps.setString(3, maPhieu);
-                    ps.executeUpdate();
-                    
-                    JOptionPane.showMessageDialog(this, "Thu tiền thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                    txtMaPhieu.setText("");
-                    txtTienThu.setText("");
-                    updateData(""); // Load lại toàn bộ danh sách
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Lỗi Database", JOptionPane.ERROR_MESSAGE);
-                }
+                String paymentKey=maPhieu+"|"+amount.stripTrailingZeros().toPlainString();
+                if(!paymentKey.equals(pendingPaymentKey)){pendingPaymentKey=paymentKey;pendingPaymentId=java.util.UUID.randomUUID().toString();}
+                String requestId=pendingPaymentId;
+                utils.Ui.async(this,btnThuTien,()->new service.PaymentService().collect(maPhieu,amount,"Thu tại phòng đào tạo",requestId),message->{
+                    JOptionPane.showMessageDialog(this,message);pendingPaymentKey=null;pendingPaymentId=null;updateData(currentMaHK);txtTienThu.setText("");
+                });
             }
         });
 
@@ -184,30 +174,31 @@ public class AdminCongNoPanel extends JPanel {
     // LOGIC DATABASE (LẤY TẤT CẢ DỮ LIỆU)
     // ==========================================
     public void updateData(String maHK) {
+        currentMaHK=maHK;
         // Bỏ việc lọc theo maHK, lấy toàn bộ danh sách từ CSDL
         model.setRowCount(0);
         double tongNo = 0;
 
         String sql = "SELECT c.MaPhieu, c.MaSV, s.HoTen, c.MaHK, c.TongTienPhaiDong, c.SoTienDaDong, c.TrangThai " +
                      "FROM CONG_NO_HOC_PHI c JOIN SINH_VIEN s ON c.MaSV = s.MaSV " +
-                     "ORDER BY c.MaHK DESC, c.MaPhieu ASC"; // Lấy tất cả và sắp xếp theo Học kỳ
+                     "WHERE c.MaHK=? ORDER BY c.MaPhieu ASC"; // Lấy tất cả và sắp xếp theo Học kỳ
                      
         try (Connection conn = DBConnect.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ResultSet rs = ps.executeQuery();
+            ps.setString(1,maHK);ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 double phaiDong = rs.getDouble("TongTienPhaiDong");
                 double daDong = rs.getDouble("SoTienDaDong");
-                double no = phaiDong - daDong;
+                double no = Math.max(0,phaiDong - daDong);
                 
                 // Chỉ cộng dồn những phiếu còn nợ
                 if (no > 0) tongNo += no;
                 
                 model.addRow(new Object[]{
                     rs.getString("MaPhieu"), rs.getString("MaSV"), rs.getString("HoTen"), rs.getString("MaHK"),
-                    String.format("%,.0f đ", phaiDong), String.format("%,.0f đ", daDong), String.format("%,.0f đ", Math.max(no, 0)), rs.getString("TrangThai")
+                    String.format("%,.0f đ", phaiDong), String.format("%,.0f đ", daDong), String.format("%,.0f đ", Math.max(no, 0)), (no==0?"Đã hoàn thành":daDong>0?"Còn nợ":"Chưa đóng")
                 });
             }
-            lblTongNoToanTruong.setText("Tổng nợ toàn trường: " + String.format("%,.0f VNĐ", tongNo));
+            lblTongNoToanTruong.setText("Tổng nợ học kỳ: " + String.format("%,.0f VNĐ", tongNo));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -256,9 +247,9 @@ public class AdminCongNoPanel extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (!isSelected) {
-                c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
+                c.setBackground(row % 2 == 0 ? Color.WHITE : UIUtils.BLUE_SOFT);
             } else {
-                c.setBackground(UIUtils.MIT_RED_LIGHT);
+                c.setBackground(UIUtils.BLUE_LIGHT);
             }
             
             // Xử lý màu chữ cho cột Trạng thái

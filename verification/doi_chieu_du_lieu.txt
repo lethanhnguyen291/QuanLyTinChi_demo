@@ -1,0 +1,14 @@
+PASS shipped SQL scripts restore successfully; additive migration can run twice.
+PASS original data retained: BUOI_HOC_NGOAI_LE = 0 rows
+PASS original data retained: CHUONG_TRINH_DAO_TAO = 14 rows
+PASS original data retained: CONG_NO_HOC_PHI = 57 rows
+PASS original data retained: GIANG_VIEN = 33 rows
+PASS original data retained: HOC_KY = 5 rows
+PASS original data retained: KET_QUA_DANG_KY = 356 rows
+PASS original data retained: KHOA = 4 rows
+PASS original data retained: LOP_HOC_PHAN = 60 rows
+PASS original data retained: MON_HOC = 54 rows
+PASS original data retained: MON_TIEN_QUYET = 24 rows
+PASS original data retained: NGAY_NGHI = 21 rows
+PASS original data retained: SINH_VIEN = 100 rows
+PASS temporary QA accounts/records removed; first administrator setup available.

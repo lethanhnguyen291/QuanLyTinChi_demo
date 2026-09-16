@@ -1,0 +1,10 @@
+PASS Find relocated application independently of working directory
+PASS Configuration stays beside relocated application
+PASS Fresh ZIP/GitHub checkout has no secret and opens setup
+PASS Fresh copy targets the upgraded database
+PASS Test and save config enables the extracted copy
+PASS Connect to upgraded SQL database from extracted JAR
+PASS Original 100 students remain readable
+PASS Wrong password produces authentication guidance
+PASS Failed setup preserves working configuration
+PORTABILITY CHECK PASSED

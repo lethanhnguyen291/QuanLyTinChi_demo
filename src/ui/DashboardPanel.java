@@ -14,7 +14,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-public class DashboardPanel extends JPanel {
+public class DashboardPanel extends JPanel implements javax.swing.Scrollable {
+    public Dimension getPreferredScrollableViewportSize(){return new Dimension(900,620);}
+    public boolean getScrollableTracksViewportWidth(){return true;}
+    public boolean getScrollableTracksViewportHeight(){return false;}
+    public int getScrollableUnitIncrement(Rectangle r,int o,int d){return 24;}
+    public int getScrollableBlockIncrement(Rectangle r,int o,int d){return Math.max(24,r.height-24);}
+    private String cohort="—";
+
     // Đã gỡ bỏ static final để biến thành biến có thể thay đổi động
     private String currentHK = "HK1_2425";
     private String currentHKLabel = "Học kỳ 1 – 2024-2025";
@@ -22,7 +29,7 @@ public class DashboardPanel extends JPanel {
     private String currentMaSV;
     private String hoTen = "...", maLop = "...", maCTDT = "...";
     private String trangThaiHocTap = "Đang học", ngaySinh = "...", gioiTinh = "...";
-    private int tinChiTichLuy = 0, tinChiKyNay = 0;
+    private int tinChiTichLuy = 0, tinChiKyNay = 0, requiredCredits = 0;
     private double gpa = 0.0, tongNo = 0.0;
     
     public DashboardPanel(String maSV) {
@@ -88,23 +95,22 @@ public class DashboardPanel extends JPanel {
                     gioiTinh = rs.getString("GioiTinh") != null ? rs.getString("GioiTinh") : "Chưa cập nhật";
                 }
             }
-            String sqlDiem = "SELECT SUM(CAST(m.SoTinChi AS INT)) as TCLuyKe, AVG(CAST(kq.DiemTongKet AS FLOAT)) as DiemTB FROM KET_QUA_DANG_KY kq JOIN LOP_HOC_PHAN lhp ON kq.MaLHP = lhp.MaLHP JOIN MON_HOC m ON lhp.MaMon = m.MaMon WHERE kq.MaSV = ? AND kq.TrangThai = N'Đạt'";
-            try (PreparedStatement ps = conn.prepareStatement(sqlDiem)) {
-                ps.setString(1, currentMaSV); ResultSet rs = ps.executeQuery();
-                if (rs.next()) { tinChiTichLuy = rs.getInt("TCLuyKe"); gpa = (rs.getDouble("DiemTB") / 10.0) * 4.0; }
-            }
+            var summary=service.AcademicService.summary(currentMaSV,null);
+            tinChiTichLuy=summary.earned();gpa=summary.gpa4();
+            requiredCredits=service.AcademicService.requiredCredits(currentMaSV);
+            cohort=java.util.Objects.toString(utils.Db.scalar(conn,"SELECT p.NienKhoaApDung FROM SINH_VIEN s JOIN CHUONG_TRINH_DAO_TAO p ON p.MaCTDT=s.MaCTDT WHERE s.MaSV=?",currentMaSV),"—");
             // Đã thay CURRENT_HK bằng biến currentHK
             String sqlKyNay = "SELECT SUM(CAST(m.SoTinChi AS INT)) as TCKyNay FROM KET_QUA_DANG_KY kq JOIN LOP_HOC_PHAN lhp ON kq.MaLHP = lhp.MaLHP JOIN MON_HOC m ON lhp.MaMon = m.MaMon WHERE kq.MaSV = ? AND lhp.MaHK = ?";
             try (PreparedStatement ps = conn.prepareStatement(sqlKyNay)) {
                 ps.setString(1, currentMaSV); ps.setString(2, currentHK); ResultSet rs = ps.executeQuery();
                 if (rs.next()) tinChiKyNay = rs.getInt("TCKyNay");
             }
-            String sqlNo = "SELECT SUM(CAST(TongTienPhaiDong AS FLOAT) - CAST(SoTienDaDong AS FLOAT)) as ConNo FROM CONG_NO_HOC_PHI WHERE MaSV = ? AND TrangThai != N'Đã hoàn thành'";
+            String sqlNo = "SELECT SUM(CAST(TongTienPhaiDong AS FLOAT) - CAST(SoTienDaDong AS FLOAT)) as ConNo FROM CONG_NO_HOC_PHI WHERE MaSV = ? AND TRY_CONVERT(decimal(18,2),TongTienPhaiDong) > COALESCE(TRY_CONVERT(decimal(18,2),TRY_CONVERT(float,SoTienDaDong)),0)";
             try (PreparedStatement ps = conn.prepareStatement(sqlNo)) {
                 ps.setString(1, currentMaSV); ResultSet rs = ps.executeQuery();
                 if (rs.next()) tongNo = rs.getDouble("ConNo");
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) { throw new IllegalStateException("Không tải được thông tin sinh viên.",e); }
     }
 
     // ========================================================
@@ -116,7 +122,7 @@ public class DashboardPanel extends JPanel {
         gridStats.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         
         // Sử dụng Icon Type (1: Sao, 2: Biểu đồ, 3: Sách, 4: Tiền) để vẽ đồ họa Vector thay vì dùng Emoji bị lỗi
-        gridStats.add(createColoredStatCard("Tín chỉ tích lũy", tinChiTichLuy + " / 150", 1, new Color(254, 242, 242), new Color(220, 38, 38))); 
+        gridStats.add(createColoredStatCard("Tín chỉ tích lũy", tinChiTichLuy + " / " + requiredCredits, 1, new Color(254, 242, 242), new Color(220, 38, 38))); 
         gridStats.add(createColoredStatCard("Điểm tích lũy (GPA)", String.format("%.2f", gpa), 2, new Color(255, 247, 237), new Color(234, 88, 12))); 
         gridStats.add(createColoredStatCard("Tín chỉ kỳ này", tinChiKyNay + " TC", 3, new Color(240, 253, 244), new Color(22, 163, 74))); 
         gridStats.add(createColoredStatCard("Công nợ hiện tại", String.format("%,.0f đ", tongNo), 4, new Color(239, 246, 255), new Color(37, 99, 235))); 
@@ -125,31 +131,7 @@ public class DashboardPanel extends JPanel {
     }
 
     private JPanel createColoredStatCard(String title, String val, int iconType, Color bgColor, Color textColor) {
-        JPanel card = new JPanel(new BorderLayout(10, 0)); 
-        card.setBackground(bgColor); 
-        card.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(bgColor.darker(), 1, true), new EmptyBorder(20, 20, 20, 20)
-        ));
-        
-        JPanel textPanel = new JPanel(new GridLayout(2, 1, 0, 5)); 
-        textPanel.setBackground(bgColor);
-        
-        JLabel lT = new JLabel(title); 
-        lT.setFont(new Font("Segoe UI", Font.BOLD, 13)); 
-        lT.setForeground(textColor.darker());
-        
-        JLabel lV = new JLabel(val); 
-        lV.setFont(new Font("Segoe UI", Font.BOLD, 24)); 
-        lV.setForeground(textColor);
-        
-        textPanel.add(lT); textPanel.add(lV);
-        
-        // Gắn Icon Tự vẽ (Tuyệt đối không bị ô vuông)
-        JLabel lIcon = new JLabel(new StatIcon(iconType, textColor));
-        
-        card.add(textPanel, BorderLayout.CENTER); 
-        card.add(lIcon, BorderLayout.EAST); 
-        return card;
+        return UIUtils.statCard(title,val,iconType>=3?UIUtils.MIT_RED:UIUtils.BLUE);
     }
 
     // ========================================================
@@ -178,7 +160,7 @@ public class DashboardPanel extends JPanel {
 // 2. Đổi màu chữ của JLabel tiêu đề thành Xanh dương đậm
         
         // Thay đổi title để hiển thị tên Học kỳ động
-        JLabel lblTableTitle = new JLabel("Lịch sử học tập gần đây (" + currentHKLabel + ")");
+        JLabel lblTableTitle = new JLabel("Kết quả trong học kỳ đang chọn");
         lblTableTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTableTitle.setForeground(new Color(30, 64, 175));// Màu xanh dương đậm
         lblTableTitle.setAlignmentX(Component.CENTER_ALIGNMENT);        
@@ -194,11 +176,11 @@ public class DashboardPanel extends JPanel {
             ps.setString(1, currentMaSV);
             ps.setString(2, currentHK);
             ResultSet rs = ps.executeQuery();
-            while(rs.next()) model.addRow(new Object[]{rs.getString("MaMon"), rs.getString("TenMon"), rs.getDouble("DiemTongKet"), rs.getString("TrangThai")});
+            while(rs.next()) model.addRow(new Object[]{rs.getString("MaMon"), rs.getString("TenMon"), java.util.Objects.toString(rs.getObject("DiemTongKet"),"—"), rs.getString("TrangThai")});
         } catch (Exception e) {}
 
         JTable table = new JTable(model);
-        UIUtils.styleTable(table);
+        UIUtils.styleTable(table);UIUtils.columnWidths(table,110,250,70,140);
         
        
         DefaultTableCellRenderer customHeaderRenderer = new DefaultTableCellRenderer() {
@@ -244,7 +226,7 @@ public class DashboardPanel extends JPanel {
         alertPanel.setBorder(BorderFactory.createCompoundBorder(
             new LineBorder(UIUtils.BORDER, 1, true), new EmptyBorder(20, 20, 20, 20)
         ));
-        alertPanel.setPreferredSize(new Dimension(280, 0));
+        alertPanel.setPreferredSize(new Dimension(270, 0));
 
         JPanel alertHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         alertHeaderPanel.setBackground(Color.WHITE);
@@ -254,13 +236,15 @@ public class DashboardPanel extends JPanel {
         alertHeaderPanel.add(lblAlertTitle);
         alertHeaderPanel.setBorder(new EmptyBorder(0, 0, 15, 0));
 
-        String noMsg = (tongNo > 0) ? "Bạn đang còn nợ học phí. Vui lòng thanh toán trước ngày 30/12." : "Bạn đã hoàn thành 100% học phí.";
+        String noMsg = (tongNo > 0) ? "Bạn đang còn nợ học phí. Xem chi tiết tại mục Học phí & Công nợ." : "Bạn không còn số dư nợ trong dữ liệu hiện tại.";
+        alertHeaderPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE,45));
+        alertHeaderPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         alertPanel.add(alertHeaderPanel);
         alertPanel.add(createAlertItem("Tài chính", noMsg, tongNo > 0 ? "warn" : "info"));
         alertPanel.add(Box.createVerticalStrut(15));
         
         // Cập nhật tên Học kỳ trong thẻ thông báo
-        alertPanel.add(createAlertItem("Học vụ", "Hệ thống mở cổng đăng ký tín chỉ " + currentHKLabel + ".", "info"));
+        alertPanel.add(createAlertItem("Học vụ", "Xem trạng thái đợt đăng ký và giới hạn tín chỉ tại mục Đăng ký học phần.", "info"));
         alertPanel.add(Box.createVerticalGlue()); 
 
         bottomWrapper.add(tablePanel, BorderLayout.CENTER);
@@ -278,7 +262,7 @@ public class DashboardPanel extends JPanel {
         leftProfile.setBackground(Color.WHITE);
         String firstChar = hoTen.length() > 0 && !hoTen.equals("Đang tải...") ? hoTen.substring(0, 1) : "A";
         JLabel lblAvatar = new JLabel(firstChar, SwingConstants.CENTER);
-        lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 36)); lblAvatar.setForeground(Color.WHITE); lblAvatar.setBackground(UIUtils.MIT_ORANGE); lblAvatar.setOpaque(true); lblAvatar.setPreferredSize(new Dimension(80, 80));
+        lblAvatar.setFont(new Font("Segoe UI", Font.BOLD, 36)); lblAvatar.setForeground(Color.WHITE); lblAvatar.setBackground(UIUtils.MIT_RED); lblAvatar.setOpaque(true); lblAvatar.setPreferredSize(new Dimension(80, 80));
         
         JPanel namePanel = new JPanel(); namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.Y_AXIS)); namePanel.setBackground(Color.WHITE);
         JLabel lblName = new JLabel(hoTen); lblName.setFont(new Font("Segoe UI", Font.BOLD, 20)); lblName.setForeground(UIUtils.TEXT_MAIN);
@@ -290,7 +274,7 @@ public class DashboardPanel extends JPanel {
 
         JPanel gridInfo = new JPanel(new GridLayout(3, 2, 20, 10));
         gridInfo.setBackground(Color.WHITE); gridInfo.setBorder(new MatteBorder(0, 1, 0, 0, UIUtils.BORDER)); 
-        gridInfo.add(createProfileAttr("Ngày sinh:", ngaySinh)); gridInfo.add(createProfileAttr("Khóa học:", "K2024"));
+        gridInfo.add(createProfileAttr("Ngày sinh:", ngaySinh)); gridInfo.add(createProfileAttr("Niên khóa:", cohort));
         gridInfo.add(createProfileAttr("Giới tính:", gioiTinh)); gridInfo.add(createProfileAttr("Bậc đào tạo:", "Đại học"));
         gridInfo.add(createProfileAttr("Lớp học:", maLop)); gridInfo.add(createProfileAttr("Ngành:", maCTDT));
 
@@ -301,7 +285,7 @@ public class DashboardPanel extends JPanel {
 
     private JPanel createProfileAttr(String label, String value) {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0)); p.setBackground(Color.WHITE);
-        JLabel l1 = new JLabel(label + "  "); l1.setForeground(UIUtils.TEXT_MUTED);
+        JLabel l1 = new JLabel(label + "  "); l1.setForeground(UIUtils.MIT_RED);
         JLabel l2 = new JLabel(value); l2.setFont(new Font("Segoe UI", Font.BOLD, 14)); l2.setForeground(UIUtils.TEXT_MAIN);
         p.add(l1); p.add(l2); return p;
     }
@@ -309,45 +293,12 @@ public class DashboardPanel extends JPanel {
     // ========================================================
     // TẠO THẺ THÔNG BÁO VỚI VIỀN TRÁI NỔI BẬT NHƯ WEB
     // ========================================================
-    private JPanel createAlertItem(String tag, String body, String type) {
-        Color accentColor = type.equals("warn") ? new Color(239, 68, 68) : new Color(59, 130, 246);
-        Color badgeBg = type.equals("warn") ? new Color(254, 226, 226) : new Color(219, 234, 254); 
-        Color badgeFg = type.equals("warn") ? new Color(185, 28, 28) : new Color(30, 64, 175);
-        
-        // Vẽ Panel với Vạch màu bên trái
-        JPanel p = new JPanel(new BorderLayout(15, 0)) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setColor(accentColor);
-                g2.fillRect(0, 0, 4, getHeight()); // Vạch nhấn màu bên trái
-                g2.dispose();
-            }
-        };
-        p.setBackground(new Color(248, 250, 252)); 
-        p.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(UIUtils.BORDER, 1, true), new EmptyBorder(12, 16, 12, 13)
-        ));
-        
-        JLabel lTag = new JLabel(tag, SwingConstants.CENTER); 
-        lTag.setFont(new Font("Segoe UI", Font.BOLD, 11)); 
-        lTag.setOpaque(true); lTag.setBackground(badgeBg); lTag.setForeground(badgeFg); 
-        lTag.setBorder(new EmptyBorder(4, 8, 4, 8));
-        
-        JPanel tagWrapper = new JPanel(new BorderLayout()); 
-        tagWrapper.setBackground(p.getBackground()); 
-        tagWrapper.add(lTag, BorderLayout.NORTH);
-        
-        JLabel lBody = new JLabel("<html><div style='width: 200px; line-height: 1.4;'>" + body + "</div></html>"); 
-        lBody.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lBody.setForeground(UIUtils.TEXT_MAIN);
-        
-        p.add(tagWrapper, BorderLayout.WEST); 
-        p.add(lBody, BorderLayout.CENTER); 
-        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90)); 
-        p.setAlignmentX(Component.LEFT_ALIGNMENT); 
-        return p;
+    private JPanel createAlertItem(String tag,String body,String type){
+        JPanel panel=new JPanel(new BorderLayout(0,8));panel.setBackground(new Color(248,250,252));
+        panel.setBorder(BorderFactory.createCompoundBorder(new LineBorder(UIUtils.BORDER),new EmptyBorder(10,12,10,12)));
+        JLabel label=new JLabel(tag);label.setFont(new Font("Segoe UI",Font.BOLD,12));label.setForeground(type.equals("warn")?UIUtils.RED_500:new Color(30,64,175));
+        JTextArea text=new JTextArea(body);text.setEditable(false);text.setLineWrap(true);text.setWrapStyleWord(true);text.setOpaque(false);text.setFont(new Font("Segoe UI",Font.PLAIN,12));text.setRows(4);
+        panel.add(label,BorderLayout.NORTH);panel.add(text,BorderLayout.CENTER);panel.setMaximumSize(new Dimension(Integer.MAX_VALUE,135));panel.setAlignmentX(Component.LEFT_ALIGNMENT);return panel;
     }
 
     // ========================================================
@@ -406,8 +357,8 @@ public class DashboardPanel extends JPanel {
     class ZebraRenderer extends DefaultTableCellRenderer {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (!isSelected) c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
-            else c.setBackground(UIUtils.MIT_RED_LIGHT);
+            if (!isSelected) c.setBackground(row % 2 == 0 ? Color.WHITE : UIUtils.BLUE_SOFT);
+            else c.setBackground(UIUtils.BLUE_LIGHT);
             c.setForeground(UIUtils.TEXT_MAIN);
             setBorder(new EmptyBorder(0, 15, 0, 15)); return c;
         }
@@ -427,7 +378,7 @@ public class DashboardPanel extends JPanel {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            p.setBackground(isSelected ? table.getSelectionBackground() : (row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252)));
+            p.setBackground(isSelected ? table.getSelectionBackground() : (row % 2 == 0 ? Color.WHITE : UIUtils.BLUE_SOFT));
             if (value != null) {
                 String text = value.toString();
                 lbl.setText(text);
